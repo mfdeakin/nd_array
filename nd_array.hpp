@@ -54,6 +54,17 @@ class _ND_Array {
         &vals[0] + DIMS::slice_idx(indices...)));
   }
 
+  template <typename Reshaped_Array>
+  Reshaped_Array &reshape() noexcept {
+    static_assert(
+        Reshaped_Array::DIMS::product() == DIMS::product(),
+        "Reshaped array is not the same size");
+    return *reinterpret_cast<Reshaped_Array *>(this);
+  }
+
+  template <typename _A_Type, typename _Dims_CT_Array>
+  friend class _ND_Array;
+
  private:
   using DIMS = Dims_CT_Array;
   A_Type vals[DIMS::product()];

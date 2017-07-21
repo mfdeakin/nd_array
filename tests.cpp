@@ -4,7 +4,7 @@
 
 #include "nd_array.hpp"
 
-TEST_CASE("get, set, slice", "[ND_Array]") {
+TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
   ND_Array<int, 2, 3, 5> arr;
   int count = 1;
   for(int i = 0; i < 2; ++i) {
@@ -38,6 +38,11 @@ TEST_CASE("get, set, slice", "[ND_Array]") {
       REQUIRE(slice2(j, k) == count);
       count++;
     }
+  }
+  ND_Array<int, 5, 3> &reshape =
+      slice2.template reshape<ND_Array<int, 5, 3> >();
+  for(int i = 0; i < 3; i++) {
+    REQUIRE(&reshape(0, i) == &slice2(0, i));
   }
 }
 
