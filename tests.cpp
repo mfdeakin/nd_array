@@ -48,6 +48,28 @@ TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
 
 /* Compile Time List Tests */
 
+using ND_Array_0 =
+    ND_Array<int, 2, 3, 5, 7, 11, 13, 17, 19>;
+
+static_assert(ND_Array_0::dimension() == 8,
+              "Incorrect dimension");
+static_assert(ND_Array_0::extent(0) == 2,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(1) == 3,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(2) == 5,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(3) == 7,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(4) == 11,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(5) == 13,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(6) == 17,
+              "Incorrect extent");
+static_assert(ND_Array_0::extent(7) == 19,
+              "Incorrect extent");
+
 using Arr0 = ND_Array_internals::CT_Array<int, 4>;
 
 static_assert(Arr0::len() == 1,

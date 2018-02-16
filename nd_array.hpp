@@ -62,6 +62,14 @@ class _ND_Array {
     return *reinterpret_cast<Reshaped_Array *>(this);
   }
 
+	static constexpr int extent(int dim) {
+		return DIMS::value(dim);
+	}
+
+	static constexpr int dimension() {
+		return DIMS::len();
+	}
+
   template <typename _A_Type, typename _Dims_CT_Array>
   friend class _ND_Array;
 
