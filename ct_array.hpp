@@ -2,6 +2,7 @@
 #ifndef _CTARRAY_HPP_
 #define _CTARRAY_HPP_
 
+#include <assert.h>
 #include <type_traits>
 
 template <typename FieldT, FieldT leading, FieldT... others>
@@ -12,7 +13,7 @@ struct CT_Array {
     return sizeof...(others) + 1;
   }
 
-  static constexpr FieldT value(int idx) {
+  static constexpr FieldT value(const int idx) {
     return (idx == 0 ? current : Next::value(idx - 1));
   }
 
@@ -24,12 +25,23 @@ struct CT_Array {
     return leading * Next::product();
   }
 
+  static constexpr FieldT trailing_product(const int idx) {
+    assert(idx >= 0);
+    assert(idx < len());
+    return (idx == 0 ? product()
+                     : Next::trailing_product(idx - 1));
+  }
+
   template <typename... indices>
   static constexpr int slice_idx(int idx, indices... tail) {
+    assert(idx >= 0);
+    assert(idx < value(0));
     return idx * Next::product() + Next::slice_idx(tail...);
   }
 
   static constexpr int slice_idx(int idx) {
+    assert(idx >= 0);
+    assert(idx < value(0));
     return idx * Next::product();
   }
 
@@ -69,8 +81,16 @@ struct CT_Array<FieldT, val> {
   static constexpr int value(int idx) { return current; }
   static constexpr FieldT sum() { return val; }
   static constexpr FieldT product() { return val; }
+  static constexpr FieldT trailing_product(const int idx) {
+    assert(idx == 0);
+    return val;
+  }
 
-  static constexpr int slice_idx(int idx) { return idx; }
+  static constexpr int slice_idx(int idx) {
+    assert(idx >= 0);
+    assert(idx < val);
+    return idx;
+  }
 
   template <typename Idx_Array>
   static constexpr FieldT slice_idx() {

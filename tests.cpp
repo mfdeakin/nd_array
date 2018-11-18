@@ -46,6 +46,50 @@ TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
   }
 }
 
+TEST_CASE("iterate 1D", "[ND_Array]") {
+  ND_Array<int, 11> arr;
+  int count = 0;
+  for(int i = 0; i < arr.extent(0); i++) {
+    arr(i) = count;
+    count++;
+  }
+  auto itr = arr.begin();
+  count = 0;
+  for(int i = 0; i < arr.extent(0); i++) {
+    REQUIRE(*itr == count);
+    REQUIRE(itr.index(0) == i);
+    count++;
+    ++itr;
+  }
+}
+
+TEST_CASE("iterate 3D", "[ND_Array]") {
+  ND_Array<int, 5, 7, 11> arr;
+  int count = 0;
+  for(int i = 0; i < arr.extent(0); i++) {
+    for(int j = 0; j < arr.extent(1); j++) {
+      for(int k = 0; k < arr.extent(2); k++) {
+        arr(i, j, k) = count;
+        count++;
+      }
+    }
+  }
+  auto itr = arr.begin();
+  count = 0;
+  for(int i = 0; i < arr.extent(0); i++) {
+    for(int j = 0; j < arr.extent(1); j++) {
+      for(int k = 0; k < arr.extent(2); k++) {
+        REQUIRE(*itr == count);
+        REQUIRE(itr.index(0) == i);
+        REQUIRE(itr.index(1) == j);
+        REQUIRE(itr.index(2) == k);
+        count++;
+        ++itr;
+      }
+    }
+  }
+}
+
 /* Compile Time List Tests */
 
 using ND_Array_0 =
