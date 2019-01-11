@@ -90,6 +90,40 @@ TEST_CASE("iterate 3D", "[ND_Array]") {
   }
 }
 
+TEST_CASE("fill", "[ND_Array]") {
+  ND_Array<int, 7, 2, 3> arr;
+  const int fill_val = 756;
+  arr.fill(fill_val);
+  for(int v : arr) {
+    REQUIRE(v == fill_val);
+  }
+}
+
+TEST_CASE("swap", "[ND_Array]") {
+  ND_Array<int, 7, 2, 3> arr1, arr2;
+
+  int i = 23;
+  for(int &v : arr1) {
+    v = i;
+    i++;
+  }
+  for(int &v : arr2) {
+    v = i;
+    i++;
+  }
+  arr1.swap(arr2);
+
+  i = 23;
+  for(int v : arr2) {
+    REQUIRE(v == i);
+    i++;
+  }
+  for(int v : arr1) {
+    REQUIRE(v == i);
+    i++;
+  }
+}
+
 /* Compile Time List Tests */
 
 using ND_Array_0 =
@@ -113,6 +147,12 @@ static_assert(ND_Array_0::extent(6) == 17,
               "Incorrect extent");
 static_assert(ND_Array_0::extent(7) == 19,
               "Incorrect extent");
+static_assert(ND_Array_0::size() == 9699690,
+              "Incorrect size");
+static_assert(ND_Array_0::max_size() == 9699690,
+              "Incorrect max size");
+static_assert(ND_Array_0::empty() == false,
+              "Incorrect empty - ND_Array should never be empty");
 
 using Arr0 = ND_Array_internals::CT_Array<int, 4>;
 
