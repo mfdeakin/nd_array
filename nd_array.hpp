@@ -20,6 +20,9 @@ class [[nodiscard]] nd_array_ {
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
+  using nd_array_type =
+      nd_array_<value_type, Dims_CT_Array>;
+
   constexpr nd_array_() noexcept {}
 
   constexpr nd_array_(
@@ -162,6 +165,11 @@ class [[nodiscard]] nd_array_ {
     using const_reference = const value_type &;
     using pointer = value_type *;
 
+   protected:
+    constexpr const_iterator(pointer pos, int idx_)
+        : val(pos), idx(idx_) {}
+
+   public:
     constexpr const_iterator(const const_iterator &src)
         : val(src.val), idx(src.idx) {}
 
@@ -171,6 +179,8 @@ class [[nodiscard]] nd_array_ {
       idx = src.idx;
       return *this;
     }
+
+    ~const_iterator() = default;
 
     [[nodiscard]] constexpr bool operator==(
         const const_iterator &cmp) const {
@@ -182,7 +192,25 @@ class [[nodiscard]] nd_array_ {
       return (val != cmp.val);
     }
 
-    ~const_iterator() = default;
+    [[nodiscard]] constexpr bool operator<(
+        const const_iterator &cmp) const {
+      return idx < cmp.idx;
+    }
+
+    [[nodiscard]] constexpr bool operator<=(
+        const const_iterator &cmp) const {
+      return idx <= cmp.idx;
+    }
+
+    [[nodiscard]] constexpr bool operator>(
+        const const_iterator &cmp) const {
+      return idx > cmp.idx;
+    }
+
+    [[nodiscard]] constexpr bool operator>=(
+        const const_iterator &cmp) const {
+      return idx >= cmp.idx;
+    }
 
     constexpr const_iterator &operator++() {
       val++;
@@ -190,14 +218,33 @@ class [[nodiscard]] nd_array_ {
       return *this;
     }
 
-    // Postfix implementation
+    constexpr const_iterator &operator--() {
+      val--;
+      idx--;
+      assert(idx >= 0);
+      return *this;
+    }
+
+    // Postfix implementations
     constexpr const_iterator &operator++(int) {
       val++;
       idx++;
       return *this;
     }
 
-    [[nodiscard]] constexpr int index(const int dim) const {
+    constexpr const_iterator &operator--(int) {
+      val--;
+      idx--;
+      assert(idx >= 0);
+      return *this;
+    }
+
+    [[nodiscard]] constexpr int index() const noexcept {
+      return idx;
+    }
+
+    [[nodiscard]] constexpr int index(const int dim) const
+        noexcept {
       assert(dim < DIMS::len());
       if(dim + 1 == DIMS::len()) {
         return idx % DIMS::value(dim);
@@ -217,8 +264,7 @@ class [[nodiscard]] nd_array_ {
       std::swap(idx, other.idx);
     }
 
-    constexpr const_iterator(pointer pos)
-        : val(pos), idx(0) {}
+    friend nd_array_type;
 
    protected:
     pointer val;
@@ -226,6 +272,10 @@ class [[nodiscard]] nd_array_ {
   };
 
   class iterator : public const_iterator {
+   protected:
+    constexpr iterator(pointer pos, int idx)
+        : const_iterator(pos, idx) {}
+
    public:
     constexpr iterator(const iterator &src)
         : const_iterator(src) {}
@@ -236,31 +286,31 @@ class [[nodiscard]] nd_array_ {
       return *this;
     }
 
-    constexpr iterator(pointer pos) : const_iterator(pos) {}
-
     ~iterator() = default;
 
     [[nodiscard]] constexpr reference operator*() const {
       return *this->val;
     }
+
+    friend nd_array_type;
   };
 
   [[nodiscard]] constexpr iterator begin() noexcept {
-    return iterator(&vals[0]);
+    return iterator(&vals[0], 0);
   }
 
   [[nodiscard]] constexpr const_iterator cbegin()
       const noexcept {
-    return iterator(&vals[0]);
+    return iterator(&vals[0], 0);
   }
 
   [[nodiscard]] constexpr iterator end() noexcept {
-    return iterator(&vals[size()]);
+    return iterator(&vals[size()], size());
   }
 
   [[nodiscard]] constexpr const_iterator cend()
       const noexcept {
-    return iterator(&vals[size()]);
+    return iterator(&vals[size()], size());
   }
 
   template <typename _value_type, typename _Dims_CT_Array>
@@ -270,6 +320,17 @@ class [[nodiscard]] nd_array_ {
   using DIMS = Dims_CT_Array;
   value_type vals[size()];
 };
+
+template <typename value_type, typename dims>
+constexpr typename nd_array_<
+    value_type, dims>::const_iterator::difference_type
+operator-(
+    const typename nd_array_<value_type,
+                             dims>::const_iterator &lhs,
+    const typename nd_array_<value_type,
+                             dims>::const_iterator &rhs) {
+  return lhs.index() - rhs.index();
+}
 
 }  // namespace ND_Array_internals
 
