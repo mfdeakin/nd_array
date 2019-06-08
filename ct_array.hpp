@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <type_traits>
 
-template <typename FieldT, FieldT leading, FieldT... others>
+template <typename FieldT_, FieldT_ leading,
+          FieldT_... others>
 struct CT_Array {
+  using FieldT = FieldT_;
   constexpr static const FieldT current = leading;
 
   static constexpr int len() {
@@ -73,8 +75,9 @@ struct CT_Array {
   using Next = CT_Array<FieldT, others...>;
 };
 
-template <typename FieldT, FieldT val>
-struct CT_Array<FieldT, val> {
+template <typename FieldT_, FieldT_ val>
+struct CT_Array<FieldT_, val> {
+  using FieldT = FieldT_;
   constexpr static const FieldT current = val;
 
   static constexpr int len() { return 1; }

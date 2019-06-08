@@ -8,6 +8,10 @@ namespace ND_Array_internals {
 
 #include "ct_array.hpp"
 
+// A better implementation might have all nd_arrays inherit
+// from a 1D array (like std::array, but preferably without
+// exceptions as they don't work on all platforms; eg GPUs
+// https://reviews.llvm.org/D25036)
 template <typename value_type_, typename Dims_CT_Array>
 class [[nodiscard]] nd_array_ {
  public:
@@ -17,7 +21,7 @@ class [[nodiscard]] nd_array_ {
   using pointer = value_type *;
   using const_pointer = const value_type *;
 
-  using size_type = std::size_t;
+  using size_type = typename Dims_CT_Array::FieldT;
   using difference_type = std::ptrdiff_t;
 
   using nd_array_type =
@@ -25,10 +29,15 @@ class [[nodiscard]] nd_array_ {
 
   constexpr nd_array_() noexcept {}
 
-  constexpr nd_array_(
-      const nd_array_<value_type, Dims_CT_Array>
+  template <
+      typename Other_Dims,
+      typename std::enable_if<Other_Dims::product() ==
+                                  Dims_CT_Array::product(),
+                              int>::type = 0>
+  explicit constexpr nd_array_(
+      const nd_array_<value_type, Other_Dims>
           &src) noexcept {
-    for(int i = 0; i < size(); i++) {
+    for(size_type i = 0; i < size(); i++) {
       vals[i] = src.vals[i];
     }
   }
@@ -183,42 +192,42 @@ class [[nodiscard]] nd_array_ {
     ~const_iterator() = default;
 
     [[nodiscard]] constexpr bool operator==(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return (val == cmp.val);
     }
 
     [[nodiscard]] constexpr bool operator!=(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return (val != cmp.val);
     }
 
     [[nodiscard]] constexpr bool operator<(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return idx < cmp.idx;
     }
 
     [[nodiscard]] constexpr bool operator<=(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return idx <= cmp.idx;
     }
 
     [[nodiscard]] constexpr bool operator>(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return idx > cmp.idx;
     }
 
     [[nodiscard]] constexpr bool operator>=(
-        const const_iterator &cmp) const {
+        const const_iterator &cmp) const noexcept {
       return idx >= cmp.idx;
     }
 
-    constexpr const_iterator &operator++() {
+    constexpr const_iterator &operator++() noexcept {
       val++;
       idx++;
       return *this;
     }
 
-    constexpr const_iterator &operator--() {
+    constexpr const_iterator &operator--() noexcept {
       val--;
       idx--;
       assert(idx >= 0);
@@ -226,17 +235,22 @@ class [[nodiscard]] nd_array_ {
     }
 
     // Postfix implementations
-    constexpr const_iterator &operator++(int) {
+    constexpr const_iterator &operator++(int) noexcept {
       val++;
       idx++;
       return *this;
     }
 
-    constexpr const_iterator &operator--(int) {
+    constexpr const_iterator &operator--(int) noexcept {
       val--;
       idx--;
       assert(idx >= 0);
       return *this;
+    }
+
+    constexpr difference_type operator-(
+        const const_iterator &rhs) const noexcept {
+      return index() - rhs.index();
     }
 
     [[nodiscard]] constexpr int index() const noexcept {
@@ -255,11 +269,11 @@ class [[nodiscard]] nd_array_ {
     }
 
     [[nodiscard]] constexpr const_reference operator*()
-        const {
+        const noexcept {
       return *val;
     }
 
-    constexpr void swap(const_iterator &other) {
+    constexpr void swap(const_iterator &other) noexcept {
       std::swap(val, other.val);
       std::swap(idx, other.idx);
     }
@@ -273,14 +287,15 @@ class [[nodiscard]] nd_array_ {
 
   class iterator : public const_iterator {
    protected:
-    constexpr iterator(pointer pos, int idx)
+    constexpr iterator(pointer pos, int idx) noexcept
         : const_iterator(pos, idx) {}
 
    public:
-    constexpr iterator(const iterator &src)
+    constexpr iterator(const iterator &src) noexcept
         : const_iterator(src) {}
 
-    constexpr iterator &operator=(const iterator &src) {
+    constexpr iterator &operator=(
+        const iterator &src) noexcept {
       this->val = src.val;
       this->idx = src.idx;
       return *this;
@@ -288,7 +303,8 @@ class [[nodiscard]] nd_array_ {
 
     ~iterator() = default;
 
-    [[nodiscard]] constexpr reference operator*() const {
+    [[nodiscard]] constexpr reference operator*() const
+        noexcept {
       return *this->val;
     }
 
@@ -321,22 +337,11 @@ class [[nodiscard]] nd_array_ {
   value_type vals[size()];
 };
 
-template <typename value_type, typename dims>
-constexpr typename nd_array_<
-    value_type, dims>::const_iterator::difference_type
-operator-(
-    const typename nd_array_<value_type,
-                             dims>::const_iterator &lhs,
-    const typename nd_array_<value_type,
-                             dims>::const_iterator &rhs) {
-  return lhs.index() - rhs.index();
-}
-
 }  // namespace ND_Array_internals
 
 template <typename value_type, int... Dims>
 using ND_Array = ND_Array_internals::nd_array_<
     value_type,
-    ND_Array_internals::CT_Array<int, Dims...> >;
+    ND_Array_internals::CT_Array<size_t, Dims...>>;
 
 #endif
