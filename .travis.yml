@@ -7,8 +7,10 @@ os:
 
 addons:
   apt:
+    sources:
+    - ubuntu-toolchain-r-test
     packages:
-    - g++-5
+    - g++-7
     - lcov
 
 git:
@@ -17,8 +19,11 @@ branches:
   only:
   - master
 
+before_script:
+- if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then ln -s $(which g++-7) g++; export PATH="${PWD}:${PATH}"; fi
+
 script:
-- cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage -fsanitize=address" ./
+- cmake -D CMAKE_BUILD_TYPE=Debug -D TEST_PERFORMANCE=FALSE -D CMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage -fsanitize=address" ./
 - make VERBOSE=1 -j 2
 - ctest -VV
 
