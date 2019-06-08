@@ -8,9 +8,11 @@ enable_testing()
 
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
-add_executable(tests tests.cpp)
-set_target_properties(tests PROPERTIES COMPILE_FLAGS "-g -std=c++14")
+add_executable(tests tests.cpp zip_tests.cpp)
+set_target_properties(tests PROPERTIES COMPILE_FLAGS "-g -std=c++17 -Wall")
 add_test(all tests)
+
+set(TEST_PERFORMANCE TRUE CACHE BOOL "Whether to build the performance testing executable")
 
 if(${TEST_PERFORMANCE})
   link_directories("${google_benchmark_path}/lib")

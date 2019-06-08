@@ -1,0 +1,187 @@
+
+#ifndef _ZIP_INTERNAL_HPP_
+#define _ZIP_INTERNAL_HPP_
+
+#include <tuple>
+#include <utility>
+
+namespace zip_internal_ {
+
+// Used for constructing a tuple from a list of types which
+// can't be used directly
+template <typename... types_>
+struct tt_list {
+  template <typename additional>
+  using push_back = tt_list<types_..., additional>;
+  using tuple_type = std::tuple<types_...>;
+};
+
+template <>
+struct tt_list<> {
+  template <typename additional>
+  using push_back = tt_list<additional>;
+};
+
+// This converts each template parameter and adds them to
+// the tt_list of types before moving on to the next one.
+// Once all the types are gone, it gets the tuple type from
+// the tuple_builder.
+// This uses linear time and space, so it shouldn't horribly
+// affect compilation times
+template <typename converter_, typename cur_tt_list_,
+          typename cur_container_, typename... containers_>
+struct tuple_builder {
+  using cur_type =
+      typename converter_::template convert<cur_container_>;
+
+  using tuple_type = typename tuple_builder<
+      converter_,
+      typename cur_tt_list_::template push_back<cur_type>,
+      containers_...>::tuple_type;
+};
+
+template <typename converter_, typename cur_tt_list_,
+          typename cur_container_>
+struct tuple_builder<converter_, cur_tt_list_,
+                     cur_container_> {
+  using cur_type =
+      typename converter_::template convert<cur_container_>;
+
+  using tuple_type =
+      typename cur_tt_list_::template push_back<
+          cur_type>::tuple_type;
+};
+
+// Converters for the standard iterator types
+struct value_converter {
+  template <typename container>
+  using convert = typename container::value_type;
+};
+
+struct reference_converter {
+  template <typename container>
+  using convert = typename container::reference;
+};
+
+struct const_reference_converter {
+  template <typename container>
+  using convert = typename container::const_reference;
+};
+
+struct pointer_converter {
+  template <typename container>
+  using convert = typename container::pointer;
+};
+
+struct const_pointer_converter {
+  template <typename container>
+  using convert = typename container::const_pointer;
+};
+
+struct iterator_converter {
+  template <typename container>
+  using convert = typename container::iterator;
+};
+
+struct begin_iterator_converter
+    : public iterator_converter {
+  template <typename container>
+  convert<container> operator()(container &c) const {
+    return c.begin();
+  }
+};
+
+struct end_iterator_converter : public iterator_converter {
+  template <typename container>
+  convert<container> operator()(container &c) const {
+    return c.end();
+  }
+};
+
+struct const_iterator_converter {
+  template <typename container>
+  using convert = typename container::const_iterator;
+};
+
+// Conversions to apply to tuple elements
+struct const_begin_iterator_converter
+    : public const_iterator_converter {
+  template <typename container>
+  convert<container> operator()(const container &c) const {
+    return c.cbegin();
+  }
+};
+
+struct const_end_iterator_converter
+    : public const_iterator_converter {
+  template <typename container>
+  convert<container> operator()(const container &c) const {
+    return c.cend();
+  }
+};
+
+struct const_iterator_deref {
+  template <typename iter_t>
+  const typename iter_t::reference operator()(
+      const iter_t &i) const noexcept {
+    return *i;
+  }
+};
+
+struct iterator_incr {
+  template <typename iter_t>
+  iter_t operator()(iter_t &i) {
+    ++i;
+    return i;
+  }
+};
+
+struct iterator_decr {
+  template <typename iter_t>
+  iter_t operator()(iter_t &i) {
+    --i;
+    return i;
+  }
+};
+
+// Source for the tuple_map object:
+// https://codereview.stackexchange.com/questions/193420/apply-a-function-to-each-element-of-a-tuple-map-a-tuple
+template <class F, typename Tuple, size_t... Is>
+auto tuple_map_impl(Tuple t, F f,
+                    std::index_sequence<Is...>) {
+  return std::make_tuple(f(std::get<Is>(t))...);
+}
+
+template <class F, typename... Args>
+auto tuple_map(const std::tuple<Args...> &t, F f) {
+  return tuple_map_impl(
+      t, f, std::make_index_sequence<sizeof...(Args)>{});
+}
+
+template <class F, typename Tuple, size_t... Is>
+auto ref_tuple_map_impl(Tuple &t, F f,
+                        std::index_sequence<Is...>) {
+  return std::forward_as_tuple(f(std::get<Is>(t))...);
+}
+
+template <class F, typename... Args>
+auto ref_tuple_map(std::tuple<Args...> &t, F f) {
+  return ref_tuple_map_impl(
+      t, f, std::make_index_sequence<sizeof...(Args)>{});
+}
+
+template <class F, typename Tuple, size_t... Is>
+auto ref_tuple_map_impl(const Tuple &t, F f,
+                        std::index_sequence<Is...>) {
+  return std::forward_as_tuple(f(std::get<Is>(t))...);
+}
+
+template <class F, typename... Args>
+auto ref_tuple_map(const std::tuple<Args...> &t, F f) {
+  return ref_tuple_map_impl(
+      t, f, std::make_index_sequence<sizeof...(Args)>{});
+}
+
+}  // namespace zip_internal_
+
+#endif  // _ZIP_INTERNAL_HPP_
