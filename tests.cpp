@@ -124,6 +124,13 @@ TEST_CASE("swap", "[ND_Array]") {
   }
 }
 
+TEST_CASE("castable", "[ND_Array]") {
+	ND_Array<int, 6, 3> a1;
+	ND_Array<int, 3, 6> a2 = static_cast<ND_Array<int, 3, 6>>(a1);
+	ND_Array<int, 3, 6> &a3 = a2;
+	ND_Array<int, 3, 6> &a4 = a1.reshape<ND_Array<int, 3, 6>>();
+}
+
 /* Compile Time List Tests */
 
 using ND_Array_0 =
