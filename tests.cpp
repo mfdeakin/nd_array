@@ -7,41 +7,50 @@
 TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
   ND_Array<int, 2, 3, 5> arr;
   int count = 1;
-  for(int i = 0; i < 2; ++i) {
-    for(int j = 0; j < 3; ++j) {
-      for(int k = 0; k < 5; ++k) {
+  for(decltype(arr)::size_type i = 0; i < arr.extent(0);
+      ++i) {
+    for(decltype(arr)::size_type j = 0; j < arr.extent(1);
+        ++j) {
+      for(decltype(arr)::size_type k = 0; k < arr.extent(2);
+          ++k) {
         arr(i, j, k) = count;
         count++;
       }
     }
   }
   count = 1;
-  for(int i = 0; i < 2; ++i) {
-    for(int j = 0; j < 3; ++j) {
-      for(int k = 0; k < 5; ++k) {
+  for(decltype(arr)::size_type i = 0; i < 2; ++i) {
+    for(decltype(arr)::size_type j = 0; j < 3; ++j) {
+      for(decltype(arr)::size_type k = 0; k < 5; ++k) {
         REQUIRE(arr(i, j, k) == count);
         count++;
       }
     }
   }
   ND_Array<int, 3, 5> &slice1 = arr.outer_slice(0);
+  using Slice1T =
+      std::remove_reference<decltype(slice1)>::type;
   count = 1;
-  for(int j = 0; j < 3; ++j) {
-    for(int k = 0; k < 5; ++k) {
+  for(Slice1T::size_type j = 0; j < 3; ++j) {
+    for(Slice1T::size_type k = 0; k < 5; ++k) {
       REQUIRE(slice1(j, k) == count);
       count++;
     }
   }
   ND_Array<int, 3, 5> &slice2 = arr.outer_slice(1);
-  for(int j = 0; j < 3; ++j) {
-    for(int k = 0; k < 5; ++k) {
+  using Slice2T =
+      std::remove_reference<decltype(slice2)>::type;
+  for(Slice2T::size_type j = 0; j < 3; ++j) {
+    for(Slice2T::size_type k = 0; k < 5; ++k) {
       REQUIRE(slice2(j, k) == count);
       count++;
     }
   }
   ND_Array<int, 5, 3> &reshape =
-      slice2.template reshape<ND_Array<int, 5, 3> >();
-  for(int i = 0; i < 3; i++) {
+      slice2.template reshape<ND_Array<int, 5, 3>>();
+  using ReshapeT =
+      std::remove_reference<decltype(reshape)>::type;
+  for(ReshapeT::size_type i = 0; i < 3; i++) {
     REQUIRE(&reshape(0, i) == &slice2(0, i));
   }
 }
@@ -49,7 +58,8 @@ TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
 TEST_CASE("iterate 1D", "[ND_Array]") {
   ND_Array<int, 11> arr;
   int count = 0;
-  for(int i = 0; i < arr.extent(0); i++) {
+  for(decltype(arr)::size_type i = 0; i < arr.extent(0);
+      i++) {
     arr(i) = count;
     count++;
   }
@@ -57,7 +67,7 @@ TEST_CASE("iterate 1D", "[ND_Array]") {
   count = 0;
   for(int i = 0; i < arr.extent(0); i++) {
     REQUIRE(*itr == count);
-    REQUIRE(itr.index(0) == i);
+    REQUIRE(arr.index(itr, 0) == i);
     count++;
     ++itr;
   }
@@ -80,9 +90,9 @@ TEST_CASE("iterate 3D", "[ND_Array]") {
     for(int j = 0; j < arr.extent(1); j++) {
       for(int k = 0; k < arr.extent(2); k++) {
         REQUIRE(*itr == count);
-        REQUIRE(itr.index(0) == i);
-        REQUIRE(itr.index(1) == j);
-        REQUIRE(itr.index(2) == k);
+        REQUIRE(arr.index(itr, 0) == i);
+        REQUIRE(arr.index(itr, 1) == j);
+        REQUIRE(arr.index(itr, 2) == k);
         count++;
         ++itr;
       }
@@ -125,10 +135,12 @@ TEST_CASE("swap", "[ND_Array]") {
 }
 
 TEST_CASE("castable", "[ND_Array]") {
-	ND_Array<int, 6, 3> a1;
-	ND_Array<int, 3, 6> a2 = static_cast<ND_Array<int, 3, 6>>(a1);
-	ND_Array<int, 3, 6> &a3 = a2;
-	ND_Array<int, 3, 6> &a4 = a1.reshape<ND_Array<int, 3, 6>>();
+  ND_Array<int, 6, 3> a1;
+  ND_Array<int, 3, 6> a2 =
+      static_cast<ND_Array<int, 3, 6>>(a1);
+  ND_Array<int, 3, 6> &a3 = a2;
+  ND_Array<int, 3, 6> &a4 =
+      a1.reshape<ND_Array<int, 3, 6>>();
 }
 
 /* Compile Time List Tests */
@@ -158,8 +170,9 @@ static_assert(ND_Array_0::size() == 9699690,
               "Incorrect size");
 static_assert(ND_Array_0::max_size() == 9699690,
               "Incorrect max size");
-static_assert(ND_Array_0::empty() == false,
-              "Incorrect empty - ND_Array should never be empty");
+static_assert(
+    ND_Array_0::empty() == false,
+    "Incorrect empty - ND_Array should never be empty");
 
 using Arr0 = ND_Array_internals::CT_Array<int, 4>;
 

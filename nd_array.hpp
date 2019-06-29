@@ -15,6 +15,8 @@ namespace ND_Array_internals {
 template <typename value_type_, typename Dims_CT_Array>
 class [[nodiscard]] nd_array_ {
  public:
+  using DIMS = Dims_CT_Array;
+
   using value_type = value_type_;
   using reference = value_type &;
   using const_reference = const value_type &;
@@ -165,175 +167,45 @@ class [[nodiscard]] nd_array_ {
     }
   }
 
-  // Provides fast (memory-access wise) iterators
-  class const_iterator {
-   public:
-    using value_type = value_type_;
-    using difference_type = int;
-    using reference = value_type &;
-    using const_reference = const value_type &;
-    using pointer = value_type *;
-
-   protected:
-    constexpr const_iterator(pointer pos, int idx_)
-        : val(pos), idx(idx_) {}
-
-   public:
-    constexpr const_iterator(const const_iterator &src)
-        : val(src.val), idx(src.idx) {}
-
-    constexpr const_iterator &operator=(
-        const const_iterator &src) {
-      val = src.val;
-      idx = src.idx;
-      return *this;
-    }
-
-    ~const_iterator() = default;
-
-    [[nodiscard]] constexpr bool operator==(
-        const const_iterator &cmp) const noexcept {
-      return (val == cmp.val);
-    }
-
-    [[nodiscard]] constexpr bool operator!=(
-        const const_iterator &cmp) const noexcept {
-      return (val != cmp.val);
-    }
-
-    [[nodiscard]] constexpr bool operator<(
-        const const_iterator &cmp) const noexcept {
-      return idx < cmp.idx;
-    }
-
-    [[nodiscard]] constexpr bool operator<=(
-        const const_iterator &cmp) const noexcept {
-      return idx <= cmp.idx;
-    }
-
-    [[nodiscard]] constexpr bool operator>(
-        const const_iterator &cmp) const noexcept {
-      return idx > cmp.idx;
-    }
-
-    [[nodiscard]] constexpr bool operator>=(
-        const const_iterator &cmp) const noexcept {
-      return idx >= cmp.idx;
-    }
-
-    constexpr const_iterator &operator++() noexcept {
-      val++;
-      idx++;
-      return *this;
-    }
-
-    constexpr const_iterator &operator--() noexcept {
-      val--;
-      idx--;
-      assert(idx >= 0);
-      return *this;
-    }
-
-    // Postfix implementations
-    constexpr const_iterator &operator++(int) noexcept {
-      val++;
-      idx++;
-      return *this;
-    }
-
-    constexpr const_iterator &operator--(int) noexcept {
-      val--;
-      idx--;
-      assert(idx >= 0);
-      return *this;
-    }
-
-    constexpr difference_type operator-(
-        const const_iterator &rhs) const noexcept {
-      return index() - rhs.index();
-    }
-
-    [[nodiscard]] constexpr int index() const noexcept {
-      return idx;
-    }
-
-    [[nodiscard]] constexpr int index(const int dim) const
-        noexcept {
-      assert(dim < DIMS::len());
-      if(dim + 1 == DIMS::len()) {
-        return idx % DIMS::value(dim);
-      } else {
-        return (idx / DIMS::trailing_product(dim + 1)) %
-               DIMS::value(dim);
-      }
-    }
-
-    [[nodiscard]] constexpr const_reference operator*()
-        const noexcept {
-      return *val;
-    }
-
-    constexpr void swap(const_iterator &other) noexcept {
-      std::swap(val, other.val);
-      std::swap(idx, other.idx);
-    }
-
-    friend nd_array_type;
-
-   protected:
-    pointer val;
-    int idx;
-  };
-
-  class iterator : public const_iterator {
-   protected:
-    constexpr iterator(pointer pos, int idx) noexcept
-        : const_iterator(pos, idx) {}
-
-   public:
-    constexpr iterator(const iterator &src) noexcept
-        : const_iterator(src) {}
-
-    constexpr iterator &operator=(
-        const iterator &src) noexcept {
-      this->val = src.val;
-      this->idx = src.idx;
-      return *this;
-    }
-
-    ~iterator() = default;
-
-    [[nodiscard]] constexpr reference operator*() const
-        noexcept {
-      return *this->val;
-    }
-
-    friend nd_array_type;
-  };
+  using iterator = value_type *;
 
   [[nodiscard]] constexpr iterator begin() noexcept {
-    return iterator(&vals[0], 0);
-  }
-
-  [[nodiscard]] constexpr const_iterator cbegin()
-      const noexcept {
-    return iterator(&vals[0], 0);
+    return &vals[0];
   }
 
   [[nodiscard]] constexpr iterator end() noexcept {
-    return iterator(&vals[size()], size());
+    return &vals[size()];
+  }
+
+  using const_iterator = const value_type *;
+
+  [[nodiscard]] constexpr const_iterator cbegin()
+      const noexcept {
+    return &vals[0];
   }
 
   [[nodiscard]] constexpr const_iterator cend()
       const noexcept {
-    return iterator(&vals[size()], size());
+    return &vals[size()];
+  }
+
+  [[nodiscard]] constexpr size_type index(
+      const iterator &itr, const typename DIMS::FieldT dim)
+      const noexcept {
+    assert(dim < DIMS::len());
+    const difference_type idx = itr - cbegin();
+    if(dim + 1 == DIMS::len()) {
+      return idx % DIMS::value(dim);
+    } else {
+      return (idx / DIMS::trailing_product(dim + 1)) %
+             DIMS::value(dim);
+    }
   }
 
   template <typename _value_type, typename _Dims_CT_Array>
   friend class nd_array_;
 
  private:
-  using DIMS = Dims_CT_Array;
   value_type vals[size()];
 };
 
