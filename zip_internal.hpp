@@ -7,51 +7,6 @@
 
 namespace zip_internal_ {
 
-// Used for constructing a tuple from a list of types which
-// can't be used directly
-template <typename... types_>
-struct tt_list {
-  template <typename additional>
-  using push_back = tt_list<types_..., additional>;
-  using tuple_type = std::tuple<types_...>;
-};
-
-template <>
-struct tt_list<> {
-  template <typename additional>
-  using push_back = tt_list<additional>;
-};
-
-// This converts each template parameter and adds them to
-// the tt_list of types before moving on to the next one.
-// Once all the types are gone, it gets the tuple type from
-// the tuple_builder.
-// This uses linear time and space, so it shouldn't horribly
-// affect compilation times
-template <typename converter_, typename cur_tt_list_,
-          typename cur_container_, typename... containers_>
-struct tuple_builder {
-  using cur_type =
-      typename converter_::template convert<cur_container_>;
-
-  using tuple_type = typename tuple_builder<
-      converter_,
-      typename cur_tt_list_::template push_back<cur_type>,
-      containers_...>::tuple_type;
-};
-
-template <typename converter_, typename cur_tt_list_,
-          typename cur_container_>
-struct tuple_builder<converter_, cur_tt_list_,
-                     cur_container_> {
-  using cur_type =
-      typename converter_::template convert<cur_container_>;
-
-  using tuple_type =
-      typename cur_tt_list_::template push_back<
-          cur_type>::tuple_type;
-};
-
 // Converters for the standard iterator types
 struct value_converter {
   template <typename container>
@@ -122,8 +77,16 @@ struct const_end_iterator_converter
 
 struct const_iterator_deref {
   template <typename iter_t>
-  const typename iter_t::reference operator()(
-      const iter_t &i) const noexcept {
+  const typename std::iterator_traits<iter_t>::reference
+  operator()(const iter_t &i) const noexcept {
+    return *i;
+  }
+};
+
+struct iterator_deref {
+  template <typename iter_t>
+  typename std::iterator_traits<iter_t>::reference
+  operator()(iter_t &i) const noexcept {
     return *i;
   }
 };

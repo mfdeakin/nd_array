@@ -4,6 +4,8 @@
 
 #include "zip_internal.hpp"
 
+#include <iterator>
+
 // The actual Zip iterator
 // WARNING: The lifetime of the Zip object is dependent on
 // the lifetime of the containers its constructed with
@@ -25,41 +27,34 @@ template <typename... containers_>
 class Zip {
  public:
   // Container types
-  using value_type = typename zip_internal_::tuple_builder<
-      zip_internal_::value_converter,
-      zip_internal_::tt_list<>, containers_...>::tuple_type;
-  using reference = typename zip_internal_::tuple_builder<
-      zip_internal_::reference_converter,
-      zip_internal_::tt_list<>, containers_...>::tuple_type;
+  using value_type =
+      std::tuple<typename std::iterator_traits<
+          typename containers_::iterator>::value_type...>;
+
+  using reference =
+      std::tuple<typename std::iterator_traits<
+          typename containers_::iterator>::reference...>;
+
   using const_reference =
-      typename zip_internal_::tuple_builder<
-          zip_internal_::const_reference_converter,
-          zip_internal_::tt_list<>,
-          containers_...>::tuple_type;
-  using pointer = typename zip_internal_::tuple_builder<
-      zip_internal_::pointer_converter,
-      zip_internal_::tt_list<>, containers_...>::tuple_type;
-  using const_pointer =
-      typename zip_internal_::tuple_builder<
-          zip_internal_::const_pointer_converter,
-          zip_internal_::tt_list<>,
-          containers_...>::tuple_type;
+      std::tuple<typename std::iterator_traits<
+          typename containers_::const_iterator>::
+                     reference...>;
+
+  using pointer = std::tuple<typename std::iterator_traits<
+      typename containers_::iterator>::pointer...>;
 
   using size_type = typename std::tuple_element<
-      0, std::tuple<containers_...> >::type::size_type;
+      0, std::tuple<containers_...>>::type::size_type;
+
   using difference_type = typename std::tuple_element<
-      0,
-      std::tuple<containers_...> >::type::difference_type;
+      0, std::tuple<containers_...>>::type::difference_type;
 
   // Iterator
-  template <typename iterator_converter,
-            typename reference_t>
+  template <typename iterator_tuple_, typename reference_t>
   class iterator_t {
    public:
-    using iterator_tuple =
-        typename zip_internal_::tuple_builder<
-            iterator_converter, zip_internal_::tt_list<>,
-            containers_...>::tuple_type;
+
+    using iterator_tuple = iterator_tuple_;
 
     explicit constexpr iterator_t(
         const iterator_tuple &iters) noexcept
@@ -148,10 +143,10 @@ class Zip {
   };
 
   using const_iterator =
-      iterator_t<zip_internal_::const_iterator_converter,
+      iterator_t<std::tuple<typename containers_::const_iterator...>,
                  const_reference>;
   using iterator =
-      iterator_t<zip_internal_::iterator_converter,
+      iterator_t<std::tuple<typename containers_::iterator...>,
                  reference>;
 
   // Constructor - due to the lifetime constraints, rvalues
