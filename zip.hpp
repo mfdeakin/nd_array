@@ -6,6 +6,8 @@
 
 #include <iterator>
 
+namespace zip {
+
 // The actual Zip iterator
 // WARNING: The lifetime of the Zip object is dependent on
 // the lifetime of the containers its constructed with
@@ -23,25 +25,13 @@
 // An interesting and probably difficult to implement future
 // improvement would enable mixing the types of the
 // iterators used, so some could be marked as const
-template <typename... containers_>
+template <typename iterator_tag_, typename... containers_>
 class Zip {
  public:
   // Container types
   using value_type =
       std::tuple<typename std::iterator_traits<
           typename containers_::iterator>::value_type...>;
-
-  using reference =
-      std::tuple<typename std::iterator_traits<
-          typename containers_::iterator>::reference...>;
-
-  using const_reference =
-      std::tuple<typename std::iterator_traits<
-          typename containers_::const_iterator>::
-                     reference...>;
-
-  using pointer = std::tuple<typename std::iterator_traits<
-      typename containers_::iterator>::pointer...>;
 
   using size_type = typename std::tuple_element<
       0, std::tuple<containers_...>>::type::size_type;
@@ -50,22 +40,34 @@ class Zip {
       0, std::tuple<containers_...>>::type::difference_type;
 
   // Iterator
-  template <typename iterator_tuple_, typename reference_t>
+  template <typename... iterators_>
   class iterator_t {
    public:
+    using iterator_tuple = std::tuple<iterators_...>;
 
-    using iterator_tuple = iterator_tuple_;
+    using value_type = Zip::value_type;
+    using reference =
+        std::tuple<typename std::iterator_traits<
+            iterators_>::reference...>;
+    using pointer =
+        std::tuple<typename std::iterator_traits<
+            iterators_>::pointer...>;
+
+    using size_type = Zip::size_type;
+    using difference_type = Zip::difference_type;
+
+    using iterator_category = iterator_tag_;
 
     explicit constexpr iterator_t(
         const iterator_tuple &iters) noexcept
         : iters_(iters) {}
 
-    constexpr const reference_t operator*() const noexcept {
+    constexpr const reference operator*() const noexcept {
       return zip_internal_::ref_tuple_map(
           iters_, zip_internal_::const_iterator_deref());
     }
 
-    constexpr reference_t operator*() noexcept {
+    constexpr reference operator*() noexcept {
       return zip_internal_::ref_tuple_map(
           iters_, zip_internal_::const_iterator_deref());
     }
@@ -143,11 +145,9 @@ class Zip {
   };
 
   using const_iterator =
-      iterator_t<std::tuple<typename containers_::const_iterator...>,
-                 const_reference>;
+      iterator_t<typename containers_::const_iterator...>;
   using iterator =
-      iterator_t<std::tuple<typename containers_::iterator...>,
-                 reference>;
+      iterator_t<typename containers_::iterator...>;
 
   // Constructor - due to the lifetime constraints, rvalues
   // are not permitted as inputs, only lvalue references
@@ -187,5 +187,14 @@ class Zip {
 
   std::tuple<containers_ &...> contents_;
 };
+
+template <typename iterator_tag_ =
+              std::random_access_iterator_tag,
+          typename... containers_>
+auto make_zip(containers_ &... c) {
+  return Zip<iterator_tag_, containers_...>(c...);
+}
+
+}  // namespace zip
 
 #endif  // _ZIP_HPP_

@@ -8,13 +8,17 @@
 
 TEST_CASE("get, difference, compare, increment, set",
           "[Zip]") {
-  using ZipT = Zip<std::vector<std::pair<int, int> >,
-                   std::vector<int> >;
-  ZipT::value_type t{{234, 65}, 5};
-  std::vector<std::pair<int, int> > vp{{0, 5}};
+  using ZipT = zip::Zip<std::random_access_iterator_tag,
+                        std::vector<std::pair<int, int>>,
+                        std::vector<int>>;
+  typename std::iterator_traits<ZipT::iterator>::value_type
+      t{{234, 65}, 5};
+  // ZipT::value_type t{{234, 65}, 5};
+  std::vector<std::pair<int, int>> vp{{0, 5}};
   std::vector<int> vi{6};
   ZipT z(vp, vi);
   ZipT z2 = z;
+  ZipT z3 = zip::make_zip(vp, vi);
   SECTION("const iterator") {
     ZipT::const_iterator ci_1(z.cbegin());
     ZipT::const_iterator ci_2 = z2.cbegin();
@@ -100,11 +104,12 @@ TEST_CASE("for auto loop", "[Zip]") {
   for(int &i : arr_2) {
     i = pdf(rng);
   }
-  using Zip_T = Zip<Array, Array, Array>;
-  for(auto [a1, a2, a3] : Zip_T(arr_1, arr_2, arr_3)) {
+  for(auto [a1, a2, a3] :
+      zip::make_zip(arr_1, arr_2, arr_3)) {
     a3 = a1 + a2;
   }
-  for(auto [a1, a2, a3] : Zip_T(arr_1, arr_2, arr_3)) {
+  for(auto [a1, a2, a3] :
+      zip::make_zip(arr_1, arr_2, arr_3)) {
     REQUIRE(a3 == a1 + a2);
   }
 }
