@@ -3,8 +3,8 @@
 
 #include <random>
 
-#include "nd_array.hpp"
-#include "zip.hpp"
+#include "nd_array/nd_array.hpp"
+#include "nd_array/zip.hpp"
 
 TEST_CASE("get, difference, compare, increment, set",
           "[Zip]") {

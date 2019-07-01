@@ -2,7 +2,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "nd_array.hpp"
+#include "nd_array/nd_array.hpp"
 
 TEST_CASE("get, set, slice, reshape", "[ND_Array]") {
   ND_Array<int, 2, 3, 5> arr;
@@ -174,7 +174,7 @@ static_assert(
     ND_Array_0::empty() == false,
     "Incorrect empty - ND_Array should never be empty");
 
-using Arr0 = ND_Array_internals::CT_Array<int, 4>;
+using Arr0 = ND_Array_internals_::CT_Array<int, 4>;
 
 static_assert(Arr0::len() == 1,
               "Incorrect CT Array Length");
@@ -190,22 +190,22 @@ static_assert(Arr0::slice_idx(2) == 2,
 static_assert(Arr0::slice_idx(3) == 3,
               "Incorrect 1D slice_idx");
 
-using Arr1 = ND_Array_internals::CT_Array<int, 1, 2, 3, 4>;
+using Arr1 = ND_Array_internals_::CT_Array<int, 1, 2, 3, 4>;
 static_assert(Arr1::len() == 4,
               "Incorrect CT Array Length");
 static_assert(Arr1::sum() == 10, "Incorrect CT Array Sum");
 static_assert(Arr1::product() == 24,
               "Incorrect CT Array Product");
 
-using Arr2 = ND_Array_internals::CT_Array<int, 0, 1>;
+using Arr2 = ND_Array_internals_::CT_Array<int, 0, 1>;
 static_assert(Arr1::slice_idx<Arr2>() == 12,
               "Incorrect Template Slice Index");
 
-using Arr3 = ND_Array_internals::CT_Array<int, 0, 0, 1>;
+using Arr3 = ND_Array_internals_::CT_Array<int, 0, 0, 1>;
 static_assert(Arr1::slice_idx<Arr3>() == 4,
               "Incorrect Template Slice Index");
 
-using Arr4 = ND_Array_internals::CT_Array<int, 0, 0, 0, 1>;
+using Arr4 = ND_Array_internals_::CT_Array<int, 0, 0, 0, 1>;
 static_assert(Arr1::slice_idx<Arr4>() == 1,
               "Incorrect Template Slice Index");
 
@@ -234,27 +234,27 @@ static_assert(Arr1::slice_idx(0, 0, 2, 2) == 10,
 static_assert(Arr1::slice_idx(0, 0, 2, 3) == 11,
               "Incorrect Runtime Slice Index");
 
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   0, Arr1>::type::len() == 4,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   0, Arr1>::type::value(0) == 1,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   1, Arr1>::type::len() == 3,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   1, Arr1>::type::value(0) == 2,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   2, Arr1>::type::len() == 2,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   2, Arr1>::type::value(0) == 3,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   3, Arr1>::type::len() == 1,
               "forward_truncate_array failed");
-static_assert(ND_Array_internals::forward_truncate_array<
+static_assert(ND_Array_internals_::forward_truncate_array<
                   3, Arr1>::type::value(0) == 4,
               "forward_truncate_array failed");

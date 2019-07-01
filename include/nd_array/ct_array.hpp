@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <type_traits>
 
+namespace ND_Array_internals_ {
+
 template <typename FieldT_, FieldT_ leading,
           FieldT_... others>
 struct CT_Array {
@@ -117,5 +119,7 @@ template <typename array>
 struct forward_truncate_array<0, array> {
   using type = array;
 };
+
+}  // namespace ND_Array_internals_
 
 #endif

@@ -12,9 +12,9 @@ void initialize() {}
 }  // namespace Kokkos
 #endif
 
-#include "nd_array.hpp"
+#include "nd_array/nd_array.hpp"
 
-#include "zip.hpp"
+#include "nd_array/zip.hpp"
 
 static void BM_Null(benchmark::State &state) {
   while(state.KeepRunning()) {

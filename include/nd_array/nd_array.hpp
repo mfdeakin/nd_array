@@ -4,9 +4,9 @@
 
 #include <type_traits>
 
-namespace ND_Array_internals {
-
 #include "ct_array.hpp"
+
+namespace ND_Array_internals_ {
 
 // A better implementation might have all nd_arrays inherit
 // from a 1D array (like std::array, but preferably without
@@ -202,6 +202,18 @@ class [[nodiscard]] nd_array_ {
     }
   }
 
+  // WARNING: This function can return an invalid iterator,
+  // comparisons of the returned iterator against begin()
+  // and end() should be inequalities rather than equalities
+  template <typename... int_t>
+  [[nodiscard]] static constexpr iterator offset(
+      const iterator &origin, const int_t &... offset) {
+    iterator itr_offset =
+        origin + static_cast<difference_type>(
+                     DIMS::slice_idx(offset...));
+    return itr_offset;
+  }
+
   template <typename _value_type, typename _Dims_CT_Array>
   friend class nd_array_;
 
@@ -209,11 +221,11 @@ class [[nodiscard]] nd_array_ {
   value_type vals[size()];
 };
 
-}  // namespace ND_Array_internals
+}  // namespace ND_Array_internals_
 
 template <typename value_type, int... Dims>
-using ND_Array = ND_Array_internals::nd_array_<
+using ND_Array = ND_Array_internals_::nd_array_<
     value_type,
-    ND_Array_internals::CT_Array<size_t, Dims...>>;
+    ND_Array_internals_::CT_Array<size_t, Dims...>>;
 
 #endif
