@@ -17,8 +17,8 @@ set(TEST_PERFORMANCE TRUE CACHE BOOL "Whether to build the performance testing e
 if(${TEST_PERFORMANCE})
   link_directories("${google_benchmark_path}/lib")
 
-  add_executable(performance performance.cpp timer/timer.cpp)
-  set_target_properties(performance PROPERTIES COMPILE_FLAGS "-g -std=c++14 -march=native")
+  add_executable(performance performance.cpp)
+  set_target_properties(performance PROPERTIES COMPILE_FLAGS "-g -std=c++17 -march=native -fstrict-aliasing")
   target_include_directories(performance PUBLIC "${google_benchmark_path}/include")
   target_link_libraries(performance benchmark pthread)
 endif()
