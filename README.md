@@ -81,9 +81,16 @@ BM_ND_Array_Initialize_2_Index      259394     920
 BM_ND_Array_Initialize_2_Pointer    259251     720
 BM_ND_Array_Initialize_2_Iterator   260720    3400
 BM_ND_Array_Initialize_2_Zip        259068    1300
+
+BM_ND_Array_Deref_MMul             1206767   98000
+BM_ND_Array_MMul                   1259991    3100
+BM_C_Array_MMul                     200179   16000
+BM_C_Ptr_MMul                       277302    3000
 ```
 
-The GCC results indicate that performance is as expected; ie equivalent to using a C array.
+The GCC results indicate that performance is mostly as expected; ie equivalent to using a C array.
+The major outlier to this is the performance of the matrix multiplication, GCC is able to optimize the C array but not the ND Array; some study is needed to understand why.
+Future tests should be done with a less naive implementation of the matrix multiply algorithm to make certain these results hold.
 
 ## Clang 8, `-O3 -fmarch=native -fstrict-aliasing`, `Intel(R) Core(TM) i7-7500U CPU @ 2.70GHz`
 ```
@@ -109,7 +116,12 @@ BM_ND_Array_Initialize_2_Index      254585    530
 BM_ND_Array_Initialize_2_Pointer    254403    290
 BM_ND_Array_Initialize_2_Iterator   234290  27000
 BM_ND_Array_Initialize_2_Zip        231021  32000
+
+BM_ND_Array_Deref_MMul              421887  44000
+BM_ND_Array_MMul                    439503   2700
+BM_C_Array_MMul                     447811   6700
+BM_C_Ptr_MMul                       440590   1567
 ```
 
 The Clang results are somewhat odd, particularly the pointer iteration over 2 ND arrays is clearly wrong, suggesting some issue with Clang optimizing things it shouldn't.
-Otherwise they largely agree with the GCC results, giving evidence to the claim that the ND array is as good as a C array in terms of performance.
+The matrix multiplication performance is essentially identical regardless of the datastructure used. Thus, with Clang, the performance difference between a C array and an ND Array is likely negligible; though perhaps slower than a C array with GCC when performing mathematical operations.

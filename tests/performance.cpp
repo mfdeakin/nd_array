@@ -16,6 +16,10 @@ void initialize() {}
 
 #include "nd_array/zip.hpp"
 
+#ifdef COMPARE_XTENSOR
+#include "xtensor/xtensor.hpp"
+#endif  // COMPARE_XTENSOR
+
 static void BM_Null(benchmark::State &state) {
   while(state.KeepRunning()) {
   }
@@ -344,10 +348,236 @@ static void BM_ND_Array_Initialize_2_Zip(
   }
 }
 
+#ifdef COMPARE_XTENSOR
+
+static xt::xtensor<double, 2> &mmul_xtensor(
+    const xt::xtensor<double, 2> &lhs,
+    const xt::xtensor<double, 2> &rhs,
+    xt::xtensor<double, 2> &result) {
+  assert(lhs.shape()[0] == result.shape()[0]);
+  assert(lhs.shape()[1] == rhs.shape()[0]);
+  assert(rhs.shape()[1] == result.shape()[1]);
+  for(int i = 0; i < lhs.shape()[0]; ++i) {
+    for(int j = 0; j < rhs.shape()[1]; ++j) {
+      result(i, j) = 0.0;
+      for(int k = 0; k < lhs.shape()[1]; ++k) {
+        result(i, j) += lhs(i, k) * rhs(k, j);
+      }
+    }
+  }
+  return result;
+}
+
+static void BM_XTensor_MMul(benchmark::State &state) {
+  xt::xtensor<double, 2> a1({80, 100});
+  xt::xtensor<double, 2> a2({100, 120});
+  xt::xtensor<double, 2> a3({80, 120});
+  double counter = 1.0;
+  for(double &v : a1) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : a2) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : a3) {
+    v = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  while(state.KeepRunning()) {
+    benchmark::DoNotOptimize(mmul_xtensor(a1, a2, a3));
+  }
+}
+
+#endif  // COMPARE_XTENSOR
+
+template <typename M1, typename M2, typename M3>
+static M3 &mmul_nd_array(const M1 &lhs, const M2 &rhs,
+                         M3 &result) {
+  static_assert(M1::extent(0) == M3::extent(0),
+                "Shapes don't match");
+  static_assert(M1::extent(1) == M2::extent(0),
+                "Shapes don't match");
+  static_assert(M2::extent(1) == M3::extent(1),
+                "Shapes don't match");
+  for(int i = 0; i < lhs.extent(0); ++i) {
+    for(int j = 0; j < rhs.extent(1); ++j) {
+      result(i, j) = 0.0;
+      for(int k = 0; k < lhs.extent(1); ++k) {
+        result(i, j) += lhs(i, k) * rhs(k, j);
+      }
+    }
+  }
+  return result;
+}
+
+static void BM_ND_Array_Deref_MMul(
+    benchmark::State &state) {
+  auto a1 = std::make_unique<ND_Array<double, 80, 100>>();
+  auto a2 = std::make_unique<ND_Array<double, 100, 120>>();
+  auto a3 = std::make_unique<ND_Array<double, 80, 120>>();
+  double counter = 1.0;
+  for(double &v : *a1) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : *a2) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : *a3) {
+    v = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  while(state.KeepRunning()) {
+    benchmark::DoNotOptimize(mmul_nd_array(*a1, *a2, *a3));
+  }
+}
+
+static void BM_ND_Array_MMul(benchmark::State &state) {
+  ND_Array<double, 80, 100> a1;
+  ND_Array<double, 100, 120> a2;
+  ND_Array<double, 80, 120> a3;
+  double counter = 1.0;
+  for(double &v : a1) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : a2) {
+    v = counter;
+    counter += 1.0;
+  }
+  for(double &v : a3) {
+    v = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  while(state.KeepRunning()) {
+    benchmark::DoNotOptimize(mmul_nd_array(a1, a2, a3));
+  }
+}
+
+template <size_t d>
+using array_2d = double (*)[d];
+
+template <size_t D1, size_t D2, size_t D3>
+static array_2d<D3> mmul_c_array(const double lhs[D1][D2],
+                                 const double rhs[D2][D3],
+                                 double result[D1][D3]) {
+  for(int i = 0; i < D1; ++i) {
+    for(int j = 0; j < D3; ++j) {
+      result[i][j] = 0.0;
+      for(int k = 0; k < D2; ++k) {
+        result[i][j] += lhs[i][k] * rhs[k][j];
+      }
+    }
+  }
+  return result;
+}
+
+static void BM_C_Array_MMul(benchmark::State &state) {
+  constexpr size_t D1 = 80;
+  constexpr size_t D2 = 100;
+  constexpr size_t D3 = 120;
+  double a1[D1][D2];
+  double a2[D2][D3];
+  double a3[D1][D3];
+  double counter = 1.0;
+  for(int i = 0; i < D1; i++) {
+    for(int j = 0; j < D2; j++) {
+      a1[i][j] = counter;
+      counter += 1.0;
+    }
+  }
+  for(int i = 0; i < D2; i++) {
+    for(int j = 0; j < D3; j++) {
+      a2[i][j] = counter;
+      counter += 1.0;
+    }
+  }
+  for(int i = 0; i < D1; i++) {
+    for(int j = 0; j < D3; j++) {
+      a3[i][j] = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
+
+  while(state.KeepRunning()) {
+    benchmark::DoNotOptimize(
+        mmul_c_array<D1, D2, D3>(a1, a2, a3));
+  }
+}
+
+static double *mmul_ptr_array(const double *lhs,
+                              const double *rhs,
+                              double *result, const int d1,
+                              const int d2, const int d3) {
+  // lhs[d1][d2], rhs[d2][d3], result[d1][d3]
+  for(int i = 0; i < d1; ++i) {
+    for(int j = 0; j < d3; ++j) {
+      result[i * d3 + j] = 0.0;
+      for(int k = 0; k < d2; ++k) {
+        result[i * d3 + j] +=
+            lhs[i * d2 + k] * rhs[k * d3 + j];
+      }
+    }
+  }
+  return result;
+}
+
+static void BM_C_Ptr_MMul(benchmark::State &state) {
+  constexpr size_t D1 = 80;
+  constexpr size_t D2 = 100;
+  constexpr size_t D3 = 120;
+  double a1[D1][D2];
+  double a2[D2][D3];
+  double a3[D1][D3];
+  double counter = 1.0;
+  for(int i = 0; i < D1; i++) {
+    for(int j = 0; j < D2; j++) {
+      a1[i][j] = counter;
+      counter += 1.0;
+    }
+  }
+  for(int i = 0; i < D2; i++) {
+    for(int j = 0; j < D3; j++) {
+      a2[i][j] = counter;
+      counter += 1.0;
+    }
+  }
+  for(int i = 0; i < D1; i++) {
+    for(int j = 0; j < D3; j++) {
+      a3[i][j] = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
+
+  while(state.KeepRunning()) {
+    benchmark::DoNotOptimize(mmul_ptr_array(
+        &a1[0][0], &a2[0][0], &a3[0][0], D1, D2, D3));
+  }
+}
+
 int main(int argc, char **argv) {
   Kokkos::initialize();
 
   benchmark::RegisterBenchmark("BM_Null", BM_Null);
+
+#ifdef COMPARE_XTENSOR
+  benchmark::RegisterBenchmark("BM_XTensor_MMul",
+                               BM_XTensor_MMul);
+#endif  // COMPARE_XTENSOR
+  benchmark::RegisterBenchmark("BM_ND_Array_Deref_MMul",
+                               BM_ND_Array_Deref_MMul);
+  benchmark::RegisterBenchmark("BM_ND_Array_MMul",
+                               BM_ND_Array_MMul);
+  benchmark::RegisterBenchmark("BM_C_Array_MMul",
+                               BM_C_Array_MMul);
+  benchmark::RegisterBenchmark("BM_C_Ptr_MMul",
+                               BM_C_Ptr_MMul);
+#ifdef COMPARE_XTENSOR
+  benchmark::RegisterBenchmark("BM_XTensor_MMul_2",
+                               BM_XTensor_MMul);
+#endif  // COMPARE_XTENSOR
+
   benchmark::RegisterBenchmark("BM_ND_Array_Create",
                                BM_ND_Array_Create);
 
