@@ -105,7 +105,7 @@ class [[nodiscard]] nd_array_ {
   }
 
   template <typename... int_t>
-  [[nodiscard]] nd_array_<
+  [[nodiscard]] constexpr nd_array_<
       value_type,
       typename forward_truncate_array<sizeof...(int_t),
                                       Dims_CT_Array>::type>
