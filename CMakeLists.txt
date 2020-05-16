@@ -6,6 +6,8 @@ set(google_benchmark_path /usr/local CACHE PATH "Path to where Google Benchmark 
 
 enable_testing()
 
+set(CMAKE_CXX_CLANG_TIDY clang-tidy -checks=clang-analyzer-*,performance*,modernize*,clang-diagnostic*,bugprone*,clang-diagnostic-*,-modernize-use-trailing-return-type)
+
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 add_executable(unit_tests tests/tests.cpp tests/zip_tests.cpp)

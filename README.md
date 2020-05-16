@@ -1,4 +1,6 @@
 # ND Array
+## TLDR; use C++20's mdview with 1D arrays if you can support exceptions; if you can't, use EASTL's (or equivalent) eventual implementation
+
 A generic ND array with compile time dimensions
 This requires C++14
 
